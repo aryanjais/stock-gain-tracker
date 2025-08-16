@@ -83,6 +83,15 @@ export const validateStockEntry = (data: StockEntryFormData): ValidationError[] 
 		errors.push({ field: 'symbol', message: 'Invalid stock symbol format' });
 	}
 
+	// Validate stock name
+	if (!data.stockName.trim()) {
+		errors.push({ field: 'stockName', message: 'Stock name is required' });
+	} else if (data.stockName.trim().length < 2) {
+		errors.push({ field: 'stockName', message: 'Stock name must be at least 2 characters long' });
+	} else if (data.stockName.trim().length > 100) {
+		errors.push({ field: 'stockName', message: 'Stock name must be less than 100 characters' });
+	}
+
 	// Validate quantity
 	if (data.quantity <= 0) {
 		errors.push({ field: 'quantity', message: 'Quantity must be greater than 0' });
@@ -121,6 +130,7 @@ export const createStockEntry = (formData: StockEntryFormData): StockEntry => {
 	return {
 		id: generateId(),
 		symbol: formData.symbol.trim(), // Preserve original format including spaces
+		stockName: formData.stockName.trim(), // Preserve original format including spaces
 		type: formData.type,
 		quantity: formData.quantity,
 		price: formData.price,
@@ -140,6 +150,7 @@ export const updateStockEntry = (entry: StockEntry, updates: Partial<StockEntryF
 		...entry,
 		...updates,
 		symbol: updates.symbol ? updates.symbol.trim() : entry.symbol, // Preserve original format including spaces
+		stockName: updates.stockName ? updates.stockName.trim() : entry.stockName, // Preserve original format including spaces
 		notes: updates.notes?.trim() || entry.notes,
 		updatedAt: getCurrentDate(),
 	};

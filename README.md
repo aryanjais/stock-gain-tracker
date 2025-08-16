@@ -4,12 +4,48 @@ A React application for calculating net profit/loss from stock transactions and 
 
 ## Features
 
-- **Stock Transaction Management**: Add buy/sell transactions with detailed information
-- **Flexible Stock Symbols**: Support for various symbol formats including spaces, dots, and hyphens (e.g., "BRK.A", "BRK-B", "ALPHABET INC")
-- **Net Profit/Loss Calculator**: Calculate realized and unrealized gains/losses
-- **Portfolio Summary**: Comprehensive analysis of your investment portfolio
-- **Current Holdings Tracking**: See how many shares you still own of each stock
-- **Stock Position Analysis**: Detailed breakdown of bought/sold shares per stock
+- **Stock Transaction Management**: Add, edit, and delete individual stock transactions
+- **Stock Name Tracking**: Store both stock symbols and company names for better identification
+- **Flexible CSV Import**: Import multiple transactions with flexible column ordering and multiple date formats
+- **Portfolio Analysis**: Comprehensive portfolio summary with realized and unrealized gains/losses
+- **Gain/Loss Calculator**: Calculate profit/loss for specific stocks with current market prices
+- **Data Persistence**: All data is automatically saved to local storage
+- **Clear All Trades**: Option to clear all transaction data with confirmation dialog
+- **Responsive Design**: Works seamlessly on both mobile and desktop devices
+
+## Transaction Management
+
+### Adding Transactions
+- Fill out the transaction form with stock symbol, stock name, type (buy/sell), quantity, price, date, fees, and optional notes
+- Stock symbols support various formats including spaces, dots, and hyphens
+- Stock names store the full company name for better identification
+- All fields are validated to ensure data integrity
+
+### Editing Transactions
+- Click the edit button (✏️) on any transaction in the list view
+- Modify any field including stock symbol, stock name, transaction type, quantity, price, date, fees, or notes
+- Changes are automatically saved and reflected in all calculations
+- Edit mode provides the same validation as the add form
+
+### Importing Transactions (CSV)
+
+The application supports importing multiple stock transactions at once using CSV files. The CSV import feature includes:
+
+- **Flexible Column Ordering**: Headers can be in any order as long as the titles match exactly
+- **Multiple Date Formats**: Supports dd-mm-yyyy, dd-mm-yyyy hh:mm am/pm, and yyyy-mm-dd formats
+- **Flexible Price Input**: You can provide either `pricePerShare` (price per individual share) or `totalPrice` (total transaction value)
+- **Required Columns**: symbol, stockName, type, quantity, date
+- **Optional Columns**: fees, notes, pricePerShare, totalPrice
+- **Data Validation**: Comprehensive validation with detailed error reporting
+- **Preview Mode**: Review data before importing
+- **Template Download**: Get a sample CSV file to understand the format
+
+**Price Information**: When importing, you can provide either price per share or total price, but not both. The system will automatically calculate the missing value based on the quantity.
+
+**Date Formats Supported**:
+- `15-01-2024` (dd-mm-yyyy)
+- `15-01-2024 10:30 am` (dd-mm-yyyy hh:mm am/pm)
+- `2024-01-15` (yyyy-mm-dd)
 
 ## User Story: Portfolio Summary
 
@@ -35,7 +71,7 @@ So that I can understand my overall financial performance and make informed inve
 
 #### Stock Positions Analysis
 For each stock that has been traded:
-- **Symbol**: Stock ticker symbol
+- **Name**: Stock name/ticker
 - **Total Shares Bought**: Total shares purchased across all transactions
 - **Total Shares Sold**: Total shares sold across all transactions
 - **Shares Owned**: Current shares remaining (0 if completely sold)
@@ -47,11 +83,11 @@ For each stock that has been traded:
 - **Unrealized Gain/Loss**: Potential profit/loss on remaining shares in ₹
 - **Total Gain/Loss**: Combined realized and unrealized for this stock in ₹
 
-*Note: All traded stocks are shown, including those with remaining holdings. Realized profit/loss is calculated only for sold shares using FIFO method.*
+*Note: All traded stock names are shown, including those with remaining holdings. Realized profit/loss is calculated only for sold shares using FIFO method.*
 
 #### Portfolio Statistics
 - **Total Transactions**: Number of all buy/sell transactions
-- **Unique Stocks**: Number of different stocks traded
+- **Unique Stock Names**: Number of different stock names traded
 - **Stocks with Holdings**: Number of stocks I still own shares in
 - **Overall Return**: Percentage return on total investment
 
@@ -64,7 +100,7 @@ For each stock that has been traded:
 - Average cost is calculated only from buy transactions
 - All calculations include transaction fees
 - Positive values indicate profit, negative values indicate loss
-- **All traded stocks are displayed**, including those that have been completely sold
+- **All traded stock names are displayed**, including those that have been completely sold
 
 ### User Experience
 - Key profit/loss figures are highlighted for easy identification
@@ -83,7 +119,9 @@ npm run dev
 ## Usage
 
 1. Add your stock transactions using the form
-2. Switch between different views:
+2. Edit existing transactions by clicking the edit button (✏️) in the list view
+3. Import multiple transactions at once using the CSV upload feature
+4. Switch between different views:
    - **Stock List**: View all your transactions
    - **Net Profit/Loss**: Interactive calculator
    - **Portfolio Summary**: Comprehensive portfolio analysis

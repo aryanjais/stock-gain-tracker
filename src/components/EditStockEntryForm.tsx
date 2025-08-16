@@ -1,31 +1,46 @@
 /**
- * Stock Entry Form Component
- * Responsive form for adding new stock transactions
+ * Edit Stock Entry Form Component
+ * Form for editing existing stock transactions
  */
 
-import React, { useState } from 'react';
-import type { StockEntryFormData, ValidationError } from '../types';
+import React, { useState, useEffect } from 'react';
+import type { StockEntry, StockEntryFormData, ValidationError } from '../types';
 import { useStockContext } from '../context/useStockContext';
 
-interface StockEntryFormProps {
+interface EditStockEntryFormProps {
+	entry: StockEntry;
 	onSuccess?: () => void;
 	onCancel?: () => void;
 }
 
-export const StockEntryForm: React.FC<StockEntryFormProps> = ({ onSuccess, onCancel }) => {
-	const { addEntry, validateEntry } = useStockContext();
+export const EditStockEntryForm: React.FC<EditStockEntryFormProps> = ({ entry, onSuccess, onCancel }) => {
+	const { updateEntry, validateEntry } = useStockContext();
 	const [formData, setFormData] = useState<StockEntryFormData>({
-		symbol: '',
-		stockName: '',
-		type: 'buy',
-		quantity: 0,
-		price: 0,
-		date: new Date().toISOString().split('T')[0],
-		fees: 0,
-		notes: '',
+		symbol: entry.symbol,
+		stockName: entry.stockName,
+		type: entry.type,
+		quantity: entry.quantity,
+		price: entry.price,
+		date: entry.date,
+		fees: entry.fees,
+		notes: entry.notes || '',
 	});
 	const [errors, setErrors] = useState<ValidationError[]>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	// Update form data when entry changes
+	useEffect(() => {
+		setFormData({
+			symbol: entry.symbol,
+			stockName: entry.stockName,
+			type: entry.type,
+			quantity: entry.quantity,
+			price: entry.price,
+			date: entry.date,
+			fees: entry.fees,
+			notes: entry.notes || '',
+		});
+	}, [entry]);
 
 	const handleInputChange = (field: keyof StockEntryFormData, value: string | number) => {
 		setFormData(prev => ({ ...prev, [field]: value }));
@@ -45,27 +60,15 @@ export const StockEntryForm: React.FC<StockEntryFormProps> = ({ onSuccess, onCan
 				return;
 			}
 
-			// Submit entry
-			const result = await addEntry(formData);
+			// Update entry
+			const result = await updateEntry(entry.id, formData);
 			if (result.success) {
-				// Reset form
-				setFormData({
-					symbol: '',
-					stockName: '',
-					type: 'buy',
-					quantity: 0,
-					price: 0,
-					date: new Date().toISOString().split('T')[0],
-					fees: 0,
-					notes: '',
-				});
-				setErrors([]);
 				onSuccess?.();
 			} else {
 				setErrors(result.errors || []);
 			}
 		} catch {
-			setErrors([{ field: 'general', message: 'Failed to add entry' }]);
+			setErrors([{ field: 'general', message: 'Failed to update entry' }]);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -76,10 +79,10 @@ export const StockEntryForm: React.FC<StockEntryFormProps> = ({ onSuccess, onCan
 	};
 
 	return (
-		<div className="stock-entry-form">
+		<div className="edit-stock-entry-form">
 			<div className="form-header">
-				<h2>Add Stock Transaction</h2>
-				<p>Enter the details of your stock purchase or sale</p>
+				<h2>Edit Stock Transaction</h2>
+				<p>Update the details of your stock transaction</p>
 			</div>
 
 			<form onSubmit={handleSubmit} className="form">
@@ -177,7 +180,9 @@ export const StockEntryForm: React.FC<StockEntryFormProps> = ({ onSuccess, onCan
 							<span className="error-text">{getFieldError('price')}</span>
 						)}
 					</div>
+				</div>
 
+				<div className="form-row">
 					<div className="form-group">
 						<label htmlFor="date">Transaction Date *</label>
 						<input
@@ -192,9 +197,7 @@ export const StockEntryForm: React.FC<StockEntryFormProps> = ({ onSuccess, onCan
 							<span className="error-text">{getFieldError('date')}</span>
 						)}
 					</div>
-				</div>
 
-				<div className="form-row">
 					<div className="form-group">
 						<label htmlFor="fees">Fees</label>
 						<input
@@ -242,7 +245,7 @@ export const StockEntryForm: React.FC<StockEntryFormProps> = ({ onSuccess, onCan
 						className="btn btn-primary"
 						disabled={isSubmitting}
 					>
-						{isSubmitting ? 'Adding...' : 'Add Transaction'}
+						{isSubmitting ? 'Updating...' : 'Update Transaction'}
 					</button>
 				</div>
 			</form>

@@ -1,6 +1,13 @@
 /**
  * Calculation utilities for Stock Gain Tracker application
  * Handles portfolio analysis, gain/loss calculations, and financial metrics
+ *
+ * FIFO (First In, First Out) Implementation:
+ * - Buy transactions are added to a queue in chronological order
+ * - Sell transactions consume shares from the beginning of the queue
+ * - This ensures the oldest shares are sold first, providing accurate cost basis
+ * - Average cost and unrealized gains/losses are calculated only on remaining shares
+ * - More accurate than simple average cost when dealing with partial sales
  */
 
 import type { StockEntry, PortfolioStats, StockPosition } from '../types';
@@ -50,6 +57,7 @@ export const calculateCurrentPortfolioValue = (entries: StockEntry[]): number =>
 /**
  * Calculate realized profit/loss for a specific stock using FIFO method
  * Only considers shares that have been sold, matching with earliest bought shares
+ * Handles sell-before-buy scenarios by using future buy transactions
  */
 export const calculateRealizedProfitLossForStock = (stockEntries: StockEntry[]): number => {
 	// Sort entries by date
@@ -57,6 +65,7 @@ export const calculateRealizedProfitLossForStock = (stockEntries: StockEntry[]):
 
 	let totalRealizedProfitLoss = 0;
 	const buyQueue: Array<{quantity: number, price: number, fees: number}> = [];
+	const pendingSells: Array<{quantity: number, price: number, fees: number, date: string}> = [];
 
 	sortedEntries.forEach(entry => {
 		if (entry.type === 'buy') {
@@ -66,13 +75,53 @@ export const calculateRealizedProfitLossForStock = (stockEntries: StockEntry[]):
 				price: entry.price,
 				fees: entry.fees,
 			});
+
+			// Process any pending sells that can now be matched
+			let i = 0;
+			while (i < pendingSells.length) {
+				const pendingSell = pendingSells[i];
+				let sharesToSell = pendingSell.quantity;
+				let costBasis = 0;
+
+				// Try to match with available buy lots
+				while (sharesToSell > 0 && buyQueue.length > 0) {
+					const buyLot = buyQueue[0];
+					const sharesFromThisLot = Math.min(sharesToSell, buyLot.quantity);
+
+					// Calculate cost basis for these shares
+					const costPerShare = buyLot.price + (buyLot.fees / buyLot.quantity);
+					costBasis += sharesFromThisLot * costPerShare;
+
+					// Update shares to sell and buy queue
+					sharesToSell -= sharesFromThisLot;
+					buyLot.quantity -= sharesFromThisLot;
+
+					// Remove buy lot if completely used
+					if (buyLot.quantity === 0) {
+						buyQueue.shift();
+					}
+				}
+
+				// If we can fully process this pending sell
+				if (sharesToSell === 0) {
+					const sellProceeds = pendingSell.quantity * pendingSell.price - pendingSell.fees;
+					const realizedProfitLoss = sellProceeds - costBasis;
+					totalRealizedProfitLoss += realizedProfitLoss;
+
+					// Remove the processed pending sell
+					pendingSells.splice(i, 1);
+				} else {
+					// Update remaining shares to sell
+					pendingSells[i] = { ...pendingSell, quantity: sharesToSell };
+					i++;
+				}
+			}
 		} else if (entry.type === 'sell') {
 			// Process sell transaction
 			let sharesToSell = entry.quantity;
-			const sellProceeds = entry.quantity * entry.price - entry.fees;
 			let costBasis = 0;
 
-			// Match sold shares with earliest bought shares (FIFO)
+			// First, try to match with existing buy lots (FIFO)
 			while (sharesToSell > 0 && buyQueue.length > 0) {
 				const buyLot = buyQueue[0];
 				const sharesFromThisLot = Math.min(sharesToSell, buyLot.quantity);
@@ -91,24 +140,161 @@ export const calculateRealizedProfitLossForStock = (stockEntries: StockEntry[]):
 				}
 			}
 
-			// Calculate realized profit/loss for this sell transaction
-			const realizedProfitLoss = sellProceeds - costBasis;
-			totalRealizedProfitLoss += realizedProfitLoss;
+			// If we still have shares to sell, add to pending sells
+			if (sharesToSell > 0) {
+				pendingSells.push({
+					quantity: sharesToSell,
+					price: entry.price,
+					fees: entry.fees * (sharesToSell / entry.quantity), // Proportional fees
+					date: entry.date,
+				});
+			}
+
+			// Calculate realized profit/loss for the shares we could process immediately
+			if (costBasis > 0) {
+				const sharesProcessed = entry.quantity - sharesToSell;
+				const sellProceeds = sharesProcessed * entry.price - (entry.fees * (sharesProcessed / entry.quantity));
+				const realizedProfitLoss = sellProceeds - costBasis;
+				totalRealizedProfitLoss += realizedProfitLoss;
+			}
 		}
 	});
+
+	// Process any remaining pending sells (these would be short sales or invalid scenarios)
+	// For now, we'll calculate them using the average cost of all buy transactions
+	if (pendingSells.length > 0) {
+		const allBuyEntries = stockEntries.filter(entry => entry.type === 'buy');
+		if (allBuyEntries.length > 0) {
+			const totalBuyCost = allBuyEntries.reduce((total, entry) =>
+				total + (entry.quantity * entry.price) + entry.fees, 0);
+			const totalBuyShares = allBuyEntries.reduce((total, entry) =>
+				total + entry.quantity, 0);
+
+			if (totalBuyShares > 0) {
+				const averageCostPerShare = totalBuyCost / totalBuyShares;
+
+				pendingSells.forEach(pendingSell => {
+					const costBasis = pendingSell.quantity * averageCostPerShare;
+					const sellProceeds = pendingSell.quantity * pendingSell.price - pendingSell.fees;
+					const realizedProfitLoss = sellProceeds - costBasis;
+					totalRealizedProfitLoss += realizedProfitLoss;
+				});
+			}
+		}
+	}
 
 	return totalRealizedProfitLoss;
 };
 
 /**
+ * Calculate FIFO-based average cost for remaining shares
+ * This provides more accurate cost basis by tracking which shares remain after sales
+ */
+export const calculateFIFOAverageCost = (entries: StockEntry[]): number => {
+	// Sort entries by date to ensure proper FIFO order
+	const sortedEntries = entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+	let totalCostBasis = 0;
+	let totalShares = 0;
+	const buyQueue: Array<{quantity: number, price: number, fees: number}> = [];
+
+	sortedEntries.forEach(entry => {
+		if (entry.type === 'buy') {
+			// Add buy transaction to the queue
+			buyQueue.push({
+				quantity: entry.quantity,
+				price: entry.price,
+				fees: entry.fees,
+			});
+		} else if (entry.type === 'sell') {
+			// Remove sold shares from the beginning of the queue (FIFO)
+			let sharesToSell = entry.quantity;
+
+			while (sharesToSell > 0 && buyQueue.length > 0) {
+				const buyLot = buyQueue[0];
+				const sharesFromThisLot = Math.min(sharesToSell, buyLot.quantity);
+
+				sharesToSell -= sharesFromThisLot;
+				buyLot.quantity -= sharesFromThisLot;
+
+				// Remove buy lot if completely used
+				if (buyLot.quantity === 0) {
+					buyQueue.shift();
+				}
+			}
+		}
+	});
+
+	// Calculate average cost from remaining buy lots
+	buyQueue.forEach(lot => {
+		totalCostBasis += (lot.quantity * lot.price) + lot.fees;
+		totalShares += lot.quantity;
+	});
+
+	return totalShares > 0 ? totalCostBasis / totalShares : 0;
+};
+
+/**
+ * Calculate total cost basis for remaining shares using FIFO method
+ * Returns the total amount invested in remaining shares
+ */
+export const calculateFIFOCostBasis = (entries: StockEntry[]): number => {
+	// Sort entries by date to ensure proper FIFO order
+	const sortedEntries = entries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+	let totalCostBasis = 0;
+	const buyQueue: Array<{quantity: number, price: number, fees: number}> = [];
+
+	sortedEntries.forEach(entry => {
+		if (entry.type === 'buy') {
+			// Add buy transaction to the queue
+			buyQueue.push({
+				quantity: entry.quantity,
+				price: entry.price,
+				fees: entry.fees,
+			});
+		} else if (entry.type === 'sell') {
+			// Remove sold shares from the beginning of the queue (FIFO)
+			let sharesToSell = entry.quantity;
+
+			while (sharesToSell > 0 && buyQueue.length > 0) {
+				const buyLot = buyQueue[0];
+				const sharesFromThisLot = Math.min(sharesToSell, buyLot.quantity);
+
+				sharesToSell -= sharesFromThisLot;
+				buyLot.quantity -= sharesFromThisLot;
+
+				// Remove buy lot if completely used
+				if (buyLot.quantity === 0) {
+					buyQueue.shift();
+				}
+			}
+		}
+	});
+
+	// Calculate total cost basis from remaining buy lots
+	buyQueue.forEach(lot => {
+		totalCostBasis += (lot.quantity * lot.price) + lot.fees;
+	});
+
+	return totalCostBasis;
+};
+
+/**
  * Calculate individual stock positions with enhanced analysis
  */
-export const calculateStockPositions = (entries: StockEntry[]): StockPosition[] => {
+export const calculateStockPositions = (
+	entries: StockEntry[],
+	currentMarketPrices?: Record<string, number>,
+): StockPosition[] => {
 	const uniqueStocks = getUniqueSymbols(entries);
 
 	return uniqueStocks
 		.map(symbol => {
 			const stockEntries = entries.filter(entry => entry.symbol === symbol);
+
+			// Get stock name from the first entry (all entries for a symbol should have the same stock name)
+			const stockName = stockEntries[0]?.stockName || symbol;
 
 			// Calculate bought and sold shares
 			const buyEntries = stockEntries.filter(entry => entry.type === 'buy');
@@ -127,22 +313,29 @@ export const calculateStockPositions = (entries: StockEntry[]): StockPosition[] 
 			// Calculate realized profit/loss using FIFO method
 			const realizedProfitLoss = calculateRealizedProfitLossForStock(stockEntries);
 
-			// Calculate average cost for remaining shares
-			const averageCost = totalSharesBought > 0 ? totalInvested / totalSharesBought : 0;
+			// Calculate average cost for remaining shares using FIFO method
+			const averageCost = calculateFIFOAverageCost(stockEntries);
 
-			// Calculate current value (using last known price)
-			const lastEntry = stockEntries
-				.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-			const currentValue = sharesOwned > 0 ? sharesOwned * (lastEntry?.price || averageCost) : 0;
+			// Calculate cost basis for remaining shares using FIFO method
+			const remainingSharesCostBasis = calculateFIFOCostBasis(stockEntries);
+
+			// Calculate current value using provided market prices or 0 if not available
+			const currentMarketPrice = currentMarketPrices?.[symbol] || 0;
+			const currentValue = sharesOwned > 0 && currentMarketPrice > 0
+				? sharesOwned * currentMarketPrice
+				: 0;
 
 			// Calculate unrealized gain/loss on remaining shares
-			const unrealizedGainLoss = sharesOwned > 0 ? currentValue - (sharesOwned * averageCost) : 0;
+			const unrealizedGainLoss = sharesOwned > 0 && currentMarketPrice > 0
+				? currentValue - remainingSharesCostBasis
+				: 0;
 
 			// Calculate total gain/loss
 			const totalGainLoss = realizedProfitLoss + unrealizedGainLoss;
 
 			return {
 				symbol,
+				stockName,
 				totalSharesBought,
 				totalSharesSold,
 				sharesOwned,
@@ -153,6 +346,7 @@ export const calculateStockPositions = (entries: StockEntry[]): StockPosition[] 
 				currentValue,
 				unrealizedGainLoss,
 				totalGainLoss,
+				remainingSharesCostBasis,
 				transactions: stockEntries,
 			};
 		}); // Show all stocks traded, including those with remaining shares
@@ -161,11 +355,17 @@ export const calculateStockPositions = (entries: StockEntry[]): StockPosition[] 
 /**
  * Calculate all stock positions (including those with remaining shares)
  */
-export const calculateAllStockPositions = (entries: StockEntry[]): StockPosition[] => {
+export const calculateAllStockPositions = (
+	entries: StockEntry[],
+	currentMarketPrices?: Record<string, number>,
+): StockPosition[] => {
 	const uniqueStocks = getUniqueSymbols(entries);
 
 	return uniqueStocks.map(symbol => {
 		const stockEntries = entries.filter(entry => entry.symbol === symbol);
+
+		// Get stock name from the first entry (all entries for a symbol should have the same stock name)
+		const stockName = stockEntries[0]?.stockName || symbol;
 
 		// Calculate bought and sold shares
 		const buyEntries = stockEntries.filter(entry => entry.type === 'buy');
@@ -184,22 +384,29 @@ export const calculateAllStockPositions = (entries: StockEntry[]): StockPosition
 		// Calculate realized profit/loss using FIFO method
 		const realizedProfitLoss = calculateRealizedProfitLossForStock(stockEntries);
 
-		// Calculate average cost for remaining shares
-		const averageCost = totalSharesBought > 0 ? totalInvested / totalSharesBought : 0;
+		// Calculate average cost for remaining shares using FIFO method
+		const averageCost = calculateFIFOAverageCost(stockEntries);
 
-		// Calculate current value (using last known price)
-		const lastEntry = stockEntries
-			.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-		const currentValue = sharesOwned > 0 ? sharesOwned * (lastEntry?.price || averageCost) : 0;
+		// Calculate cost basis for remaining shares using FIFO method
+		const remainingSharesCostBasis = calculateFIFOCostBasis(stockEntries);
+
+		// Calculate current value using provided market prices or 0 if not available
+		const currentMarketPrice = currentMarketPrices?.[symbol] || 0;
+		const currentValue = sharesOwned > 0 && currentMarketPrice > 0
+			? sharesOwned * currentMarketPrice
+			: 0;
 
 		// Calculate unrealized gain/loss on remaining shares
-		const unrealizedGainLoss = sharesOwned > 0 ? currentValue - (sharesOwned * averageCost) : 0;
+		const unrealizedGainLoss = sharesOwned > 0 && currentMarketPrice > 0
+			? currentValue - (sharesOwned * averageCost)
+			: 0;
 
 		// Calculate total gain/loss
 		const totalGainLoss = realizedProfitLoss + unrealizedGainLoss;
 
 		return {
 			symbol,
+			stockName,
 			totalSharesBought,
 			totalSharesSold,
 			sharesOwned,
@@ -210,6 +417,7 @@ export const calculateAllStockPositions = (entries: StockEntry[]): StockPosition
 			currentValue,
 			unrealizedGainLoss,
 			totalGainLoss,
+			remainingSharesCostBasis,
 			transactions: stockEntries,
 		};
 	});
@@ -316,49 +524,38 @@ export const calculateTotalFees = (entries: StockEntry[]): number => {
 /**
  * Calculate portfolio performance over time
  */
-export const calculatePerformanceOverTime = (entries: StockEntry[]): Array<{
+export const calculatePerformanceOverTime = (
+	entries: StockEntry[],
+	currentMarketPrices?: Record<string, number>,
+): Array<{
 	date: string;
 	value: number;
 	gainLoss: number;
 }> => {
-	// Group entries by date
-	const entriesByDate = entries.reduce((acc, entry) => {
-		const date = entry.date.split('T')[0]; // Get just the date part
-		if (!acc[date]) {
-			acc[date] = [];
-		}
-		acc[date].push(entry);
-		return acc;
-	}, {} as Record<string, StockEntry[]>);
+	// Get unique dates and sort them
+	const dates = [...new Set(entries.map(e => e.date.split('T')[0]))].sort();
 
-	// Calculate cumulative value for each date
-	const dates = Object.keys(entriesByDate).sort();
 	const performance: Array<{
 		date: string;
 		value: number;
 		gainLoss: number;
 	}> = [];
 
-	let cumulativeValue = 0;
-	let cumulativeInvestment = 0;
-
 	dates.forEach(date => {
-		const dayEntries = entriesByDate[date];
+		// Get all entries up to this date
+		const entriesUpToDate = entries.filter(e => e.date.split('T')[0] <= date);
 
-		dayEntries.forEach(entry => {
-			if (entry.type === 'buy') {
-				cumulativeInvestment += entry.quantity * entry.price;
-				cumulativeValue += entry.quantity * entry.price;
-			} else {
-				// For sell transactions, we assume the value is realized
-				cumulativeValue += entry.quantity * entry.price;
-			}
-		});
+		// Calculate positions as of this date
+		const positions = calculateStockPositions(entriesUpToDate, currentMarketPrices);
+
+		// Calculate total portfolio value and investment
+		const totalValue = positions.reduce((sum, pos) => sum + pos.currentValue, 0);
+		const totalInvested = positions.reduce((sum, pos) => sum + pos.totalInvested, 0);
 
 		performance.push({
 			date,
-			value: cumulativeValue,
-			gainLoss: cumulativeValue - cumulativeInvestment,
+			value: totalValue,
+			gainLoss: totalValue - totalInvested,
 		});
 	});
 

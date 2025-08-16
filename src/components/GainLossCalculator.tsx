@@ -1,6 +1,6 @@
 /**
  * Gain/Loss Calculator Component
- * Allows users to calculate profit/loss for specific stocks
+ * Allows users to calculate profit/loss for specific stocks with current market prices
  */
 
 import React, { useState, useMemo } from 'react';
@@ -11,9 +11,10 @@ import { formatCurrency, formatPercentage } from '../utils/helpers';
 
 interface GainLossCalculatorProps {
 	onClose?: () => void;
+	onBack?: () => void;
 }
 
-export const GainLossCalculator: React.FC<GainLossCalculatorProps> = ({ onClose }) => {
+export const GainLossCalculator: React.FC<GainLossCalculatorProps> = ({ onClose, onBack }) => {
 	const { state } = useStockContext();
 	const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
 	const [showAllStocks, setShowAllStocks] = useState(false);
@@ -52,7 +53,13 @@ export const GainLossCalculator: React.FC<GainLossCalculatorProps> = ({ onClose 
 	}, [activePositions, currentPrices]);
 
 	const handlePriceChange = (symbol: string, price: string) => {
-		const numericPrice = parseFloat(price) || 0;
+		const numericPrice = parseFloat(price);
+
+		// Better validation - don't update state for invalid prices
+		if (isNaN(numericPrice) || numericPrice <= 0) {
+			return;
+		}
+
 		setCurrentPrices(prev => ({
 			...prev,
 			[symbol]: numericPrice,
@@ -63,7 +70,27 @@ export const GainLossCalculator: React.FC<GainLossCalculatorProps> = ({ onClose 
 		setCurrentPrices({});
 	};
 
+	const handleBack = () => {
+		if (onBack) {
+			onBack();
+		} else if (onClose) {
+			onClose();
+		} else {
+			// Fallback to browser back if no navigation prop provided
+			window.history.back();
+		}
+	};
+
 	const displayedPositions = showAllStocks ? activePositions : activePositions.slice(0, 5);
+
+	// Check if all stocks have current prices entered
+	const hasCompleteData = activePositions.every(position =>
+		currentPrices[position.symbol] && currentPrices[position.symbol] > 0,
+	);
+
+	const incompleteStocks = activePositions.filter(position =>
+		!currentPrices[position.symbol] || currentPrices[position.symbol] <= 0,
+	);
 
 	if (state.loading) {
 		return (
@@ -100,6 +127,12 @@ export const GainLossCalculator: React.FC<GainLossCalculatorProps> = ({ onClose 
 					>
 						Reset Prices
 					</button>
+					<button
+						onClick={handleBack}
+						className="btn btn-secondary"
+					>
+						← Back to Main View
+					</button>
 					{onClose && (
 						<button
 							onClick={onClose}
@@ -110,6 +143,28 @@ export const GainLossCalculator: React.FC<GainLossCalculatorProps> = ({ onClose 
 					)}
 				</div>
 			</div>
+
+			{/* Data Completeness Warning */}
+			{!hasCompleteData && (
+				<div className="warning-banner">
+					<div className="warning-content">
+						<span className="warning-icon">⚠️</span>
+						<div className="warning-text">
+							<strong>Incomplete Data:</strong> {incompleteStocks.length} stock{incompleteStocks.length !== 1 ? 's' : ''}
+							{incompleteStocks.length !== 1 ? 'are' : 'is'} missing current market prices.
+							Enter current prices for accurate profit/loss calculations.
+						</div>
+					</div>
+					<div className="warning-actions">
+						<button
+							onClick={handleResetPrices}
+							className="btn btn-secondary btn-small"
+						>
+							Clear All Prices
+						</button>
+					</div>
+				</div>
+			)}
 
 			{/* Net Profit/Loss Summary */}
 			<div className="net-profit-summary">

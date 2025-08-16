@@ -118,6 +118,9 @@ export const StockList: React.FC<StockListProps> = ({ onEditEntry }) => {
 							<th onClick={() => handleSort('symbol')} className="sortable">
 								Symbol {getSortIcon('symbol')}
 							</th>
+							<th onClick={() => handleSort('stockName')} className="sortable">
+								Stock Name {getSortIcon('stockName')}
+							</th>
 							<th onClick={() => handleSort('type')} className="sortable">
 								Type {getSortIcon('type')}
 							</th>
@@ -141,6 +144,9 @@ export const StockList: React.FC<StockListProps> = ({ onEditEntry }) => {
 								<tr key={entry.id} className={`entry-row ${entry.type}`}>
 									<td className="symbol-cell">
 										<span className="symbol">{entry.symbol}</span>
+									</td>
+									<td className="stock-name-cell">
+										<span className="stock-name">{entry.stockName}</span>
 									</td>
 									<td className="type-cell">
 										<span className={`type-badge ${entry.type}`}>
@@ -198,7 +204,11 @@ export const StockList: React.FC<StockListProps> = ({ onEditEntry }) => {
 									{entry.type.toUpperCase()}
 								</span>
 							</div>
-							<div className="card-content">
+							<div className="card-body">
+								<div className="card-row">
+									<span className="label">Stock Name:</span>
+									<span className="value stock-name">{entry.stockName}</span>
+								</div>
 								<div className="card-row">
 									<span className="label">Quantity:</span>
 									<span className="value">{entry.quantity.toLocaleString()}</span>

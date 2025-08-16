@@ -14,6 +14,9 @@ export interface StockEntry {
 	// Stock symbol (e.g., 'AAPL', 'GOOGL', 'TSLA')
 	symbol: string;
 
+	// Stock name/company name (e.g., 'Apple Inc.', 'Alphabet Inc.')
+	stockName: string;
+
 	// Type of transaction (buy or sell)
 	type: TransactionType;
 
@@ -77,6 +80,9 @@ export interface StockPosition {
 	// Stock symbol
 	symbol: string;
 
+	// Stock name/company name
+	stockName: string;
+
 	// Total shares bought
 	totalSharesBought: number;
 
@@ -107,6 +113,9 @@ export interface StockPosition {
 	// Total gain/loss (realized + unrealized)
 	totalGainLoss: number;
 
+	// Cost basis for remaining shares using FIFO method
+	remainingSharesCostBasis: number;
+
 	// All transactions for this stock
 	transactions: StockEntry[];
 }
@@ -129,6 +138,7 @@ export interface Portfolio {
 // Form data interface for adding/editing stock entries
 export interface StockEntryFormData {
 	symbol: string;
+	stockName: string;
 	type: TransactionType;
 	quantity: number;
 	price: number;
@@ -172,6 +182,7 @@ export interface SortOptions {
 // Current holdings interface
 export interface CurrentHoldings {
 	symbol: string;
+	stockName: string;
 	sharesOwned: number;
 	averageCost: number;
 	totalInvested: number;
@@ -182,6 +193,7 @@ export interface CurrentHoldings {
 // Realized profit/loss interface
 export interface RealizedProfitLoss {
 	symbol: string;
+	stockName: string;
 	totalBought: number;
 	totalSold: number;
 	totalInvested: number;

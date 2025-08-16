@@ -5,131 +5,142 @@
 
 import React, { useState } from 'react';
 import { StockEntryForm } from './StockEntryForm';
+import { EditStockEntryForm } from './EditStockEntryForm';
 import { StockList } from './StockList';
-import { GainLossCalculator } from './GainLossCalculator';
+import { CSVUpload } from './CSVUpload';
 import { PortfolioSummary } from './PortfolioSummary';
+import { GainLossCalculator } from './GainLossCalculator';
+import { useStockContext } from '../context/useStockContext';
 import type { StockEntry } from '../types';
 
-type ViewMode = 'list' | 'add' | 'edit' | 'calculator' | 'portfolio';
-
 export const StockTrackerPage: React.FC = () => {
-	const [viewMode, setViewMode] = useState<ViewMode>('list');
+	const [showAddForm, setShowAddForm] = useState(false);
+	const [showCSVUpload, setShowCSVUpload] = useState(false);
+	const [showPortfolioSummary, setShowPortfolioSummary] = useState(false);
+	const [showCalculator, setShowCalculator] = useState(false);
 	const [editingEntry, setEditingEntry] = useState<StockEntry | null>(null);
+	const { state, clearEntries } = useStockContext();
 
-	const handleAddSuccess = () => {
-		setViewMode('list');
+	const handleClearAllTrades = () => {
+		const confirmed = window.confirm(
+			'Are you sure you want to clear all trades? This action cannot be undone and will permanently delete all your stock transaction data.',
+		);
+		if (confirmed) {
+			clearEntries();
+		}
 	};
 
-	const handleCancel = () => {
-		setViewMode('list');
-		setEditingEntry(null);
+	const handleAddSuccess = () => {
+		setShowAddForm(false);
+		setShowCSVUpload(false);
 	};
 
 	const handleEditEntry = (entry: StockEntry) => {
 		setEditingEntry(entry);
-		setViewMode('edit');
+		setShowAddForm(true);
 	};
 
-	// const handleEditSuccess = () => {
-	// 	setViewMode('list');
-	// 	setEditingEntry(null);
-	// };
+	const handleEditCancel = () => {
+		setEditingEntry(null);
+		setShowAddForm(false);
+	};
+
+	if (showAddForm) {
+		if (editingEntry) {
+			return (
+				<EditStockEntryForm
+					entry={editingEntry}
+					onSuccess={handleAddSuccess}
+					onCancel={handleEditCancel}
+				/>
+			);
+		}
+		return (
+			<StockEntryForm
+				onSuccess={handleAddSuccess}
+				onCancel={handleEditCancel}
+			/>
+		);
+	}
+
+	if (showCSVUpload) {
+		return (
+			<CSVUpload
+				onSuccess={handleAddSuccess}
+				onCancel={() => setShowCSVUpload(false)}
+			/>
+		);
+	}
+
+	if (showPortfolioSummary) {
+		return (
+			<PortfolioSummary onBack={() => setShowPortfolioSummary(false)} />
+		);
+	}
+
+	if (showCalculator) {
+		return (
+			<GainLossCalculator onBack={() => setShowCalculator(false)} />
+		);
+	}
 
 	return (
 		<div className="stock-tracker-page">
 			<div className="page-header">
 				<div className="header-content">
-					<h1>Stock Profit/Loss Tracker</h1>
-					<p>Calculate net profit or loss from buying and selling stocks</p>
+					<h1>Stock Gain Tracker</h1>
+					<p>Track your stock investments and calculate gains/losses</p>
 				</div>
-
 				<div className="header-actions">
-					{viewMode === 'list' && (
-						<>
-							<button
-								onClick={() => setViewMode('portfolio')}
-								className="btn btn-secondary"
-							>
-								📊 Portfolio Summary
-							</button>
-							<button
-								onClick={() => setViewMode('calculator')}
-								className="btn btn-secondary"
-							>
-								💰 Net Profit/Loss
-							</button>
-							<button
-								onClick={() => setViewMode('add')}
-								className="btn btn-primary"
-							>
-								+ Add Transaction
-							</button>
-						</>
-					)}
-					{viewMode !== 'list' && (
+					<button
+						className="btn btn-primary"
+						onClick={() => setShowAddForm(true)}
+					>
+						➕ Add Trade
+					</button>
+					<button
+						className="btn btn-secondary"
+						onClick={() => setShowCSVUpload(true)}
+					>
+						📁 Import CSV
+					</button>
+					<button
+						className="btn btn-secondary"
+						onClick={() => setShowPortfolioSummary(true)}
+					>
+						📊 Portfolio Summary
+					</button>
+					{/* <button
+						className="btn btn-secondary"
+						onClick={() => setShowCalculator(true)}
+					>
+						🧮 Calculator
+					</button> */}
+					{state.entries.length > 0 && (
 						<button
-							onClick={handleCancel}
-							className="btn btn-secondary"
+							className="btn btn-delete"
+							onClick={handleClearAllTrades}
+							title="Clear all trades"
 						>
-							← Back to List
+							🗑️ Clear All
 						</button>
 					)}
 				</div>
 			</div>
 
 			<div className="page-content">
-				{viewMode === 'list' && (
+				{!showAddForm && !showCSVUpload && !showPortfolioSummary && !showCalculator && (
 					<div className="list-view">
 						<StockList onEditEntry={handleEditEntry} />
-					</div>
-				)}
-
-				{viewMode === 'add' && (
-					<div className="form-view">
-						<StockEntryForm
-							onSuccess={handleAddSuccess}
-							onCancel={handleCancel}
-						/>
-					</div>
-				)}
-
-				{viewMode === 'edit' && editingEntry && (
-					<div className="form-view">
-						<div className="edit-header">
-							<h2>Edit Transaction</h2>
-							<p>Update the details of your stock transaction</p>
-						</div>
-						{/* TODO: Add EditStockEntryForm component when needed */}
-						<div className="edit-placeholder">
-							<p>Edit functionality will be implemented in the next iteration.</p>
-							<button
-								onClick={handleCancel}
-								className="btn btn-secondary"
-							>
-								Cancel
-							</button>
-						</div>
-					</div>
-				)}
-
-				{viewMode === 'calculator' && (
-					<div className="calculator-view">
-						<GainLossCalculator onClose={handleCancel} />
-					</div>
-				)}
-
-				{viewMode === 'portfolio' && (
-					<div className="portfolio-view">
-						<PortfolioSummary />
 					</div>
 				)}
 			</div>
 
 			{/* Mobile floating action button */}
 			<div className="mobile-fab">
-				{viewMode === 'list' && (
+				{!showAddForm && !showCSVUpload && !showPortfolioSummary && !showCalculator && (
 					<button
-						onClick={() => setViewMode('add')}
+						onClick={() => setShowAddForm(true)}
 						className="fab-button"
 						title="Add new transaction"
 					>

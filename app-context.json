@@ -99,20 +99,23 @@
     "gitignore_added": true,
     "basic_structure": true,
     "core_functionality": {
-      "transaction_management": "COMPLETED",
-      "profit_loss_calculator": "COMPLETED",
-      "realized_profit_loss_calculation": "COMPLETED",
-      "stock_position_analysis": "COMPLETED",
-      "current_holdings_tracking": "COMPLETED",
-      "portfolio_summary": "COMPLETED"
+      "stock_entry_management": "COMPLETED",
+      "stock_name_tracking": "COMPLETED",
+      "csv_import": "COMPLETED",
+      "portfolio_analysis": "COMPLETED",
+      "gain_loss_calculator": "COMPLETED",
+      "data_persistence": "COMPLETED",
+      "clear_all_trades": "COMPLETED",
+      "performance_calculations": "COMPLETED"
     },
-          "next_steps": [
-        "Add edit functionality for stock entries",
-        "Enhance unrealized gain/loss calculations",
-        "Add current market price integration",
-        "Implement portfolio performance charts",
-        "Add stock symbol search and autocomplete"
-      ]
+    "next_steps": [
+      "Enhance unrealized gain/loss calculations",
+      "Add current market price integration",
+      "Implement portfolio performance charts",
+      "Add stock name search and autocomplete",
+      "Add delete functionality for stock entries",
+      "Add export functionality for portfolio data"
+    ]
   },
   
   "development_notes": {
@@ -128,22 +131,24 @@
       "description": "Calculate net profit/loss from stock transactions and track current holdings",
       "core_requirements": [
         "Insert all buy/sell transactions with relevant data",
-        "Calculate realized profit/loss per stock (sell price - buy price)",
-        "Track current holdings per stock (bought - sold)",
+        "Calculate realized profit/loss per stock name (sell price - buy price)",
+        "Track current holdings per stock name (bought - sold)",
         "Show total gain/loss from all completed trades",
         "Display current holdings and their market value"
       ],
-             "components_needed": [
-         "StockEntryForm - COMPLETED",
-         "StockList - COMPLETED", 
-         "StockCard - COMPLETED",
-         "GainLossCalculator - COMPLETED",
-         "PortfolioSummary - NEEDS_ENHANCEMENT",
-         "StockPositionAnalysis - COMPLETED",
-         "CurrentHoldingsDisplay - NEEDS_IMPLEMENTATION"
-       ],
+                     "components_needed": [
+          "StockEntryForm - COMPLETED",
+          "EditStockEntryForm - COMPLETED",
+          "CSVUpload - COMPLETED",
+          "StockList - COMPLETED", 
+          "StockCard - COMPLETED",
+          "GainLossCalculator - COMPLETED",
+          "PortfolioSummary - NEEDS_ENHANCEMENT",
+          "StockPositionAnalysis - COMPLETED",
+          "CurrentHoldingsDisplay - NEEDS_IMPLEMENTATION"
+        ],
       "data_structures": [
-        "StockEntry interface - COMPLETED",
+        "StockEntry interface - COMPLETED (includes stockName field)",
         "Portfolio interface - COMPLETED",
         "StockPosition interface - COMPLETED",
         "PortfolioStats interface - COMPLETED",
@@ -180,11 +185,39 @@
         "Adaptive navigation patterns"
       ]
     },
-    "calculation_logic": {
-      "realized_profit_loss": "Calculate profit/loss using FIFO method - sold shares matched with earliest bought shares",
-      "current_holdings": "Track remaining shares per stock (bought - sold)",
-      "portfolio_summary": "Show total realized gains and current holdings value",
-      "stock_analysis": "Per-stock breakdown of transactions and current position"
-    }
+          "calculation_logic": {
+        "realized_profit_loss": "Calculate profit/loss using FIFO method - sold shares matched with earliest bought shares",
+        "current_holdings": "Track remaining shares per stock name (bought - sold)",
+        "portfolio_summary": "Show total realized gains and current holdings value",
+        "stock_analysis": "Per-stock name breakdown of transactions and current position"
+      },
+		"csv_upload": {
+			"status": "COMPLETED",
+			"features": [
+				"Flexible column ordering (headers can be in any order)",
+				"Multiple date format support (dd-mm-yyyy, dd-mm-yyyy hh:mm am/pm, yyyy-mm-dd)",
+				"Flexible price input (pricePerShare OR totalPrice)",
+				"Stock name tracking integration",
+				"Data validation and error reporting",
+				"Preview before import",
+				"Template download"
+			],
+			"description": "Advanced CSV import with flexible column mapping, multiple date formats, and flexible price options"
+		},
+		"performance_calculations": {
+			"status": "COMPLETED",
+			"fixes_implemented": [
+				"Fixed current value calculation to use actual market prices instead of last transaction prices",
+				"Improved FIFO implementation for more accurate realized profit/loss calculations",
+				"Fixed performance over time calculation to show actual portfolio value progression",
+				"Enhanced price input validation to prevent invalid data entry",
+				"Added data completeness indicators and warning banners",
+				"Improved calculation accuracy for unrealized gains/losses",
+				"Better handling of edge cases and data validation",
+				"Implemented FIFO-based average cost calculation for more accurate cost basis tracking",
+				"Added FIFO cost basis calculation for remaining shares after sales"
+			],
+			"description": "Comprehensive fixes to stock performance calculations ensuring accurate profit/loss metrics and portfolio valuations, now with FIFO-based cost basis tracking"
+		}
   }
 } 

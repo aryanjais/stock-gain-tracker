@@ -3,21 +3,89 @@
  * Displays comprehensive portfolio analysis with realized and unrealized gains/losses
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useStockContext } from '../context/useStockContext';
 import { calculatePortfolioStats, calculateStockPositions } from '../utils/calculations';
 import { formatCurrency, formatDate } from '../utils/helpers';
 
-export const PortfolioSummary: React.FC = () => {
+interface PortfolioSummaryProps {
+	onBack?: () => void;
+}
+
+type SortField = 'symbol' | 'stockName' | 'sharesOwned' | 'averageCost' | 'realizedProfitLoss' | 'totalInvested' | 'totalReceived';
+type SortDirection = 'asc' | 'desc';
+
+export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ onBack }) => {
 	const { state } = useStockContext();
+	const [sortField, setSortField] = useState<SortField>('symbol');
+	const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
 	const portfolioStats = useMemo(() => {
 		return calculatePortfolioStats(state.entries);
 	}, [state.entries]);
 
 	const stockPositions = useMemo(() => {
-		return calculateStockPositions(state.entries);
-	}, [state.entries]);
+		const positions = calculateStockPositions(state.entries);
+
+		// Sort positions based on current sort settings
+		return positions.sort((a, b) => {
+			let aValue: string | number;
+			let bValue: string | number;
+
+			switch (sortField) {
+			case 'symbol':
+				aValue = a.symbol.toLowerCase();
+				bValue = b.symbol.toLowerCase();
+				break;
+			case 'stockName':
+				aValue = a.stockName.toLowerCase();
+				bValue = b.stockName.toLowerCase();
+				break;
+			case 'sharesOwned':
+				aValue = a.sharesOwned;
+				bValue = b.sharesOwned;
+				break;
+			case 'averageCost':
+				aValue = a.averageCost;
+				bValue = b.averageCost;
+				break;
+			case 'realizedProfitLoss':
+				aValue = a.realizedProfitLoss;
+				bValue = b.realizedProfitLoss;
+				break;
+			case 'totalInvested':
+				aValue = a.totalInvested;
+				bValue = b.totalInvested;
+				break;
+			case 'totalReceived':
+				aValue = a.totalReceived;
+				bValue = b.totalReceived;
+				break;
+			default:
+				aValue = a.symbol.toLowerCase();
+				bValue = b.symbol.toLowerCase();
+			}
+
+			if (typeof aValue === 'string' && typeof bValue === 'string') {
+				return sortDirection === 'asc'
+					? aValue.localeCompare(bValue)
+					: bValue.localeCompare(aValue);
+			} else {
+				return sortDirection === 'asc'
+					? (aValue as number) - (bValue as number)
+					: (bValue as number) - (aValue as number);
+			}
+		});
+	}, [state.entries, sortField, sortDirection]);
+
+	const handleBack = () => {
+		if (onBack) {
+			onBack();
+		} else {
+			// Fallback to browser back if no onBack prop provided
+			window.history.back();
+		}
+	};
 
 	if (state.loading) {
 		return (
@@ -35,6 +103,12 @@ export const PortfolioSummary: React.FC = () => {
 				<div className="empty-state">
 					<h3>No Transactions Yet</h3>
 					<p>Add your first stock transaction to see portfolio analysis!</p>
+					<button
+						className="btn btn-primary"
+						onClick={handleBack}
+					>
+						← Back to Main View
+					</button>
 				</div>
 			</div>
 		);
@@ -43,8 +117,18 @@ export const PortfolioSummary: React.FC = () => {
 	return (
 		<div className="portfolio-summary">
 			<div className="summary-header">
-				<h2>Portfolio Summary</h2>
-				<p>Comprehensive analysis of your stock trading performance</p>
+				<div className="header-content">
+					<h2>Portfolio Summary</h2>
+					<p>Comprehensive analysis of your stock trading performance</p>
+				</div>
+				<div className="header-actions">
+					<button
+						className="btn btn-secondary"
+						onClick={handleBack}
+					>
+						← Back to Main View
+					</button>
+				</div>
 			</div>
 
 			{/* Portfolio Overview */}
@@ -84,6 +168,46 @@ export const PortfolioSummary: React.FC = () => {
 				<div className="section-header">
 					<h3>Stock Positions Analysis</h3>
 					<p>{stockPositions.length} stocks traded</p>
+					<div className="sort-controls">
+						<div className="sort-info">
+							<span className="sort-label">Sort by:</span>
+							<span className="current-sort">
+								{sortField === 'symbol' && 'Symbol'}
+								{sortField === 'stockName' && 'Stock Name'}
+								{sortField === 'sharesOwned' && 'Shares Owned'}
+								{sortField === 'averageCost' && 'Average Cost'}
+								{sortField === 'realizedProfitLoss' && 'Realized P/L'}
+								{sortField === 'totalInvested' && 'Total Invested'}
+								{sortField === 'totalReceived' && 'Total Received'}
+							</span>
+							<span className="sort-direction-indicator">
+								{sortDirection === 'asc' ? '↑' : '↓'}
+							</span>
+						</div>
+						<div className="sort-actions">
+							<select
+								id="sortField"
+								value={sortField}
+								onChange={(e) => setSortField(e.target.value as SortField)}
+								className="sort-field-select"
+							>
+								<option value="symbol">Symbol (A-Z)</option>
+								<option value="stockName">Stock Name (A-Z)</option>
+								<option value="sharesOwned">Shares Owned</option>
+								<option value="averageCost">Average Cost</option>
+								<option value="realizedProfitLoss">Realized P/L</option>
+								<option value="totalInvested">Total Invested</option>
+								<option value="totalReceived">Total Received</option>
+							</select>
+							<button
+								onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+								className="sort-direction-btn"
+								title={`Currently ${sortDirection === 'asc' ? 'ascending' : 'descending'}. Click to reverse.`}
+							>
+								{sortDirection === 'asc' ? '↑' : '↓'}
+							</button>
+						</div>
+					</div>
 				</div>
 
 				<div className="positions-grid">
@@ -96,7 +220,10 @@ export const PortfolioSummary: React.FC = () => {
 						return (
 							<div key={position.symbol} className="position-card">
 								<div className="position-header">
-									<h4 className="symbol">{position.symbol}</h4>
+									<div className="position-title">
+										<h4 className="symbol">{position.symbol}</h4>
+										<span className="stock-name">{position.stockName}</span>
+									</div>
 									<span className="shares-owned">
 										{position.sharesOwned > 0
 											? `${position.sharesOwned.toLocaleString()} shares owned`

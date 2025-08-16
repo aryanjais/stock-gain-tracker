@@ -79,7 +79,19 @@ export const loadStockEntries = (): StockEntry[] => {
 			return [];
 		}
 
-		return entries;
+		// Migrate existing entries to include stockName field if missing
+		const migratedEntries = entries.map(entry => {
+			if (!entry.stockName) {
+				// Set stockName to symbol if missing (for backward compatibility)
+				return {
+					...entry,
+					stockName: entry.symbol,
+				};
+			}
+			return entry;
+		});
+
+		return migratedEntries;
 	} catch (error) {
 		console.error('Error loading stock entries:', error);
 		return [];
