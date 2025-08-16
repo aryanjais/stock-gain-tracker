@@ -1,0 +1,190 @@
+{
+  "_purpose": "This file contains the application context and structure information for the stock gain tracker React application. It serves as a reference for understanding the project structure, dependencies, and configuration. This file is designed to be easily readable and writable by AI assistants for project context.",
+  "_last_updated": "2024-12-19",
+  "_version": "1.0.0",
+  
+  "project_info": {
+    "name": "stock-profit-loss-tracker",
+    "type": "React TypeScript Application",
+    "framework": "React with Vite",
+    "language": "TypeScript",
+    "description": "A React application for calculating net profit/loss from stock transactions and tracking current holdings in Indian Rupees (₹)"
+  },
+  
+  "file_structure": {
+    "root_files": [
+      "eslint.config.js",
+      "index.html",
+      "package-lock.json",
+      "package.json",
+      "README.md",
+      "tsconfig.app.json",
+      "tsconfig.json",
+      "tsconfig.node.json",
+      "vite.config.ts",
+      ".gitignore",
+      "app-context.json"
+    ],
+    "directories": {
+      "public": ["vite.svg"],
+      "src": [
+        "App.css",
+        "App.tsx",
+        "assets/react.svg",
+        "index.css",
+        "main.tsx",
+        "vite-env.d.ts",
+        "types/index.ts",
+        "utils/helpers.ts",
+        "utils/storage.ts",
+        "utils/calculations.ts",
+        "components/StockEntryForm.tsx",
+        "components/StockList.tsx",
+        "components/StockTrackerPage.tsx",
+        "components.css",
+        "context/StockContext.tsx",
+        "context/useStockContext.ts"
+      ]
+    }
+  },
+  
+  "configuration": {
+    "eslint": {
+      "indentation": "tabs",
+      "quote_style": "single",
+      "semicolons": "always",
+      "line_ending": "unix",
+      "brace_style": "1tbs",
+      "key_rules": [
+        "no-unused-vars: error",
+        "no-console: warn",
+        "no-debugger: error",
+        "prefer-const: error",
+        "no-var: error",
+        "eqeqeq: error (strict equality)",
+        "curly: error (require braces)",
+        "camelcase: error",
+        "no-shadow: warn"
+      ]
+    },
+    "typescript": {
+      "strict": true,
+      "target": "ES2020",
+      "module": "ESNext",
+      "jsx": "react-jsx"
+    },
+    "vite": {
+      "framework": "React",
+      "bundler": "Vite"
+    }
+  },
+  
+  "dependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@eslint/js": "latest",
+    "eslint": "latest",
+    "typescript-eslint": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "eslint-plugin-react-refresh": "latest"
+  },
+  
+  "current_state": {
+    "setup_complete": true,
+    "eslint_configured": true,
+    "gitignore_added": true,
+    "basic_structure": true,
+    "core_functionality": {
+      "transaction_management": "COMPLETED",
+      "profit_loss_calculator": "COMPLETED",
+      "realized_profit_loss_calculation": "COMPLETED",
+      "stock_position_analysis": "COMPLETED",
+      "current_holdings_tracking": "COMPLETED",
+      "portfolio_summary": "COMPLETED"
+    },
+          "next_steps": [
+        "Add edit functionality for stock entries",
+        "Enhance unrealized gain/loss calculations",
+        "Add current market price integration",
+        "Implement portfolio performance charts",
+        "Add stock symbol search and autocomplete"
+      ]
+  },
+  
+  "development_notes": {
+    "indentation": "Use tabs for indentation (configured in ESLint)",
+    "code_style": "Follow ESLint rules for consistency",
+    "file_naming": "Use PascalCase for components, camelCase for functions",
+    "imports": "Use ES6 import/export syntax",
+    "type_safety": "Use TypeScript interfaces and types for all data structures"
+  },
+  
+  "planned_features": {
+    "stock_tracking": {
+      "description": "Calculate net profit/loss from stock transactions and track current holdings",
+      "core_requirements": [
+        "Insert all buy/sell transactions with relevant data",
+        "Calculate realized profit/loss per stock (sell price - buy price)",
+        "Track current holdings per stock (bought - sold)",
+        "Show total gain/loss from all completed trades",
+        "Display current holdings and their market value"
+      ],
+             "components_needed": [
+         "StockEntryForm - COMPLETED",
+         "StockList - COMPLETED", 
+         "StockCard - COMPLETED",
+         "GainLossCalculator - COMPLETED",
+         "PortfolioSummary - NEEDS_ENHANCEMENT",
+         "StockPositionAnalysis - COMPLETED",
+         "CurrentHoldingsDisplay - NEEDS_IMPLEMENTATION"
+       ],
+      "data_structures": [
+        "StockEntry interface - COMPLETED",
+        "Portfolio interface - COMPLETED",
+        "StockPosition interface - COMPLETED",
+        "PortfolioStats interface - COMPLETED",
+        "GainLoss calculation logic - COMPLETED",
+        "RealizedProfitLoss interface - NEEDS_IMPLEMENTATION",
+        "CurrentHoldings interface - NEEDS_IMPLEMENTATION"
+      ],
+      "utilities_created": [
+        "helpers.ts - Data manipulation and validation",
+        "storage.ts - Local storage management",
+        "calculations.ts - Portfolio analysis and metrics"
+      ]
+    },
+    "ui_components": {
+      "description": "Modern, responsive UI components for desktop and mobile",
+      "responsive_design": {
+        "desktop": "Full-featured interface with sidebar navigation",
+        "tablet": "Adaptive layout with collapsible sidebar",
+        "mobile": "Mobile-first design with bottom navigation"
+      },
+      "components": [
+        "Header",
+        "Sidebar",
+        "MainContent",
+        "Forms",
+        "Tables",
+        "Charts"
+      ],
+      "responsive_features": [
+        "Mobile-first CSS approach",
+        "Flexible grid layouts",
+        "Touch-friendly interface elements",
+        "Responsive typography",
+        "Adaptive navigation patterns"
+      ]
+    },
+    "calculation_logic": {
+      "realized_profit_loss": "Calculate profit/loss using FIFO method - sold shares matched with earliest bought shares",
+      "current_holdings": "Track remaining shares per stock (bought - sold)",
+      "portfolio_summary": "Show total realized gains and current holdings value",
+      "stock_analysis": "Per-stock breakdown of transactions and current position"
+    }
+  }
+} 
