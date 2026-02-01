@@ -19,6 +19,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ onBack }) =>
 	const { state } = useStockContext();
 	const [sortField, setSortField] = useState<SortField>('symbol');
 	const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+	const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
 
 	const portfolioStats = useMemo(() => {
 		return calculatePortfolioStats(state.entries);
@@ -168,6 +169,22 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ onBack }) =>
 				<div className="section-header">
 					<h3>Stock Positions Analysis</h3>
 					<p>{stockPositions.length} stocks traded</p>
+					<div className="view-toggle">
+						<button
+							className={`toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
+							onClick={() => setViewMode('cards')}
+							title="Card View"
+						>
+							📱 Cards
+						</button>
+						<button
+							className={`toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+							onClick={() => setViewMode('list')}
+							title="List View"
+						>
+							📋 List
+						</button>
+					</div>
 					<div className="sort-controls">
 						<div className="sort-info">
 							<span className="sort-label">Sort by:</span>
@@ -210,94 +227,136 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ onBack }) =>
 					</div>
 				</div>
 
-				<div className="positions-grid">
-					{stockPositions.map((position) => {
-						// Get individual transactions for this stock
-						const stockTransactions = state.entries
-							.filter(entry => entry.symbol === position.symbol)
-							.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+				{viewMode === 'cards' ? (
+					<div className="positions-grid">
+						{stockPositions.map((position) => {
+							// Get individual transactions for this stock
+							const stockTransactions = state.entries
+								.filter(entry => entry.symbol === position.symbol)
+								.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-						return (
-							<div key={position.symbol} className="position-card">
-								<div className="position-header">
-									<div className="position-title">
-										<h4 className="symbol">{position.symbol}</h4>
-										<span className="stock-name">{position.stockName}</span>
+							return (
+								<div key={position.symbol} className="position-card">
+									<div className="position-header">
+										<div className="position-title">
+											<h4 className="symbol">{position.symbol}</h4>
+											<span className="stock-name">{position.stockName}</span>
+										</div>
+										<span className="shares-owned">
+											{position.sharesOwned > 0
+												? `${position.sharesOwned.toLocaleString()} shares owned`
+												: 'Fully sold'
+											}
+										</span>
 									</div>
-									<span className="shares-owned">
-										{position.sharesOwned > 0
-											? `${position.sharesOwned.toLocaleString()} shares owned`
-											: 'Fully sold'
-										}
-									</span>
-								</div>
 
-								{/* Transaction History */}
-								<div className="transaction-history">
-									<h5>Transaction History</h5>
-									<div className="transactions-list">
-										{stockTransactions.map((transaction) => (
-											<div key={transaction.id} className={`transaction-item ${transaction.type}`}>
-												<div className="transaction-header">
-													<span className="transaction-type">{transaction.type.toUpperCase()}</span>
-													<span className="transaction-date">{formatDate(transaction.date)}</span>
+									{/* Transaction History */}
+									<div className="transaction-history">
+										<h5>Transaction History</h5>
+										<div className="transactions-list">
+											{stockTransactions.map((transaction) => (
+												<div key={transaction.id} className={`transaction-item ${transaction.type}`}>
+													<div className="transaction-header">
+														<span className="transaction-type">{transaction.type.toUpperCase()}</span>
+														<span className="transaction-date">{formatDate(transaction.date)}</span>
+													</div>
+													<div className="transaction-details">
+														<span className="quantity">{transaction.quantity.toLocaleString()} shares</span>
+														<span className="price">at {formatCurrency(transaction.price)}</span>
+														<span className="total">Total: {formatCurrency(transaction.quantity * transaction.price)}</span>
+													</div>
 												</div>
-												<div className="transaction-details">
-													<span className="quantity">{transaction.quantity.toLocaleString()} shares</span>
-													<span className="price">at {formatCurrency(transaction.price)}</span>
-													<span className="total">Total: {formatCurrency(transaction.quantity * transaction.price)}</span>
-												</div>
+											))}
+										</div>
+									</div>
+
+									{/* Position Summary */}
+									<div className="position-summary">
+										<h5>Position Summary</h5>
+										<div className="summary-details">
+											<div className="summary-row">
+												<span className="label">Total Bought:</span>
+												<span className="value">{position.totalSharesBought.toLocaleString()} shares</span>
 											</div>
-										))}
+											<div className="summary-row">
+												<span className="label">Total Sold:</span>
+												<span className="value">{position.totalSharesSold.toLocaleString()} shares</span>
+											</div>
+											<div className="summary-row">
+												<span className="label">Total Invested:</span>
+												<span className="value">{formatCurrency(position.totalInvested)}</span>
+											</div>
+											<div className="summary-row">
+												<span className="label">Total Received:</span>
+												<span className="value">{formatCurrency(position.totalReceived)}</span>
+											</div>
+											{position.realizedProfitLoss !== 0 && (
+												<div className="summary-row highlight">
+													<span className="label">Realized P/L:</span>
+													<span className={`value ${position.realizedProfitLoss >= 0 ? 'positive' : 'negative'}`}>
+														{formatCurrency(position.realizedProfitLoss)}
+													</span>
+												</div>
+											)}
+											{position.sharesOwned > 0 && (
+												<>
+													<div className="summary-row">
+														<span className="label">Shares Owned:</span>
+														<span className="value">{position.sharesOwned.toLocaleString()} shares</span>
+													</div>
+													<div className="summary-row">
+														<span className="label">Average Cost:</span>
+														<span className="value">{formatCurrency(position.averageCost)}</span>
+													</div>
+												</>
+											)}
+										</div>
 									</div>
 								</div>
-
-								{/* Position Summary */}
-								<div className="position-summary">
-									<h5>Position Summary</h5>
-									<div className="summary-details">
-										<div className="summary-row">
-											<span className="label">Total Bought:</span>
-											<span className="value">{position.totalSharesBought.toLocaleString()} shares</span>
-										</div>
-										<div className="summary-row">
-											<span className="label">Total Sold:</span>
-											<span className="value">{position.totalSharesSold.toLocaleString()} shares</span>
-										</div>
-										<div className="summary-row">
-											<span className="label">Total Invested:</span>
-											<span className="value">{formatCurrency(position.totalInvested)}</span>
-										</div>
-										<div className="summary-row">
-											<span className="label">Total Received:</span>
-											<span className="value">{formatCurrency(position.totalReceived)}</span>
-										</div>
-										{position.realizedProfitLoss !== 0 && (
-											<div className="summary-row highlight">
-												<span className="label">Realized P/L:</span>
-												<span className={`value ${position.realizedProfitLoss >= 0 ? 'positive' : 'negative'}`}>
-													{formatCurrency(position.realizedProfitLoss)}
-												</span>
-											</div>
-										)}
-										{position.sharesOwned > 0 && (
-											<>
-												<div className="summary-row">
-													<span className="label">Shares Owned:</span>
-													<span className="value">{position.sharesOwned.toLocaleString()} shares</span>
-												</div>
-												<div className="summary-row">
-													<span className="label">Average Cost:</span>
-													<span className="value">{formatCurrency(position.averageCost)}</span>
-												</div>
-											</>
-										)}
-									</div>
+							);
+						})}
+					</div>
+				) : (
+					<div className="positions-list">
+						<div className="list-header-row">
+							<div className="list-cell symbol">Symbol</div>
+							<div className="list-cell stock-name">Stock Name</div>
+							<div className="list-cell shares">Shares Owned</div>
+							<div className="list-cell avg-cost">Avg Cost</div>
+							<div className="list-cell realized">Realized P/L</div>
+							<div className="list-cell invested">Total Invested</div>
+							<div className="list-cell received">Total Received</div>
+						</div>
+						{stockPositions.map((position) => (
+							<div key={position.symbol} className="list-row">
+								<div className="list-cell symbol">
+									<strong>{position.symbol}</strong>
+								</div>
+								<div className="list-cell stock-name">
+									{position.stockName}
+								</div>
+								<div className="list-cell shares">
+									{position.sharesOwned > 0
+										? `${position.sharesOwned.toLocaleString()}`
+										: 'Fully sold'
+									}
+								</div>
+								<div className="list-cell avg-cost">
+									{position.sharesOwned > 0 ? formatCurrency(position.averageCost) : '-'}
+								</div>
+								<div className={`list-cell realized ${position.realizedProfitLoss >= 0 ? 'positive' : 'negative'}`}>
+									{position.realizedProfitLoss !== 0 ? formatCurrency(position.realizedProfitLoss) : '-'}
+								</div>
+								<div className="list-cell invested">
+									{formatCurrency(position.totalInvested)}
+								</div>
+								<div className="list-cell received">
+									{formatCurrency(position.totalReceived)}
 								</div>
 							</div>
-						);
-					})}
-				</div>
+						))}
+					</div>
+				)}
 			</div>
 
 			{/* Portfolio Statistics */}

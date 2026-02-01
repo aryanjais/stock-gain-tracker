@@ -601,6 +601,19 @@
 		padding: var(--spacing-lg);
 	}
 
+	/* Responsive adjustments for very large screens */
+	@media (min-width: 1400px) {
+		.portfolio-summary {
+			padding: var(--spacing-xl);
+		}
+	}
+
+	@media (min-width: 1920px) {
+		.portfolio-summary {
+			padding: var(--spacing-2xl);
+		}
+	}
+
 	.summary-grid {
 		grid-template-columns: 1fr;
 		gap: var(--spacing-md);
@@ -919,8 +932,49 @@
 /* Portfolio Summary Styles */
 .portfolio-summary {
 	padding: var(--spacing-lg);
-	max-width: 1200px;
-	margin: 0 auto;
+}
+
+/* Responsive adjustments for very large screens */
+@media (min-width: 1400px) {
+	.portfolio-summary {
+		padding: var(--spacing-xl);
+	}
+
+	.overview-grid {
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	}
+
+	.positions-grid {
+		grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+	}
+
+	.stats-grid {
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	}
+}
+
+@media (min-width: 1920px) {
+	.portfolio-summary {
+		padding: var(--spacing-2xl);
+	}
+
+	.overview-grid {
+		grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+	}
+
+	.positions-grid {
+		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+	}
+
+	.stats-grid {
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	}
+
+	.sort-controls {
+		max-width: 1400px;
+		margin-left: auto;
+		margin-right: auto;
+	}
 }
 
 .summary-header {
@@ -1640,5 +1694,154 @@
 
 	.warning-actions {
 		justify-content: center;
+	}
+} 
+
+/* View Toggle Styles */
+.view-toggle {
+	display: flex;
+	gap: var(--spacing-xs);
+	margin-bottom: var(--spacing-md);
+}
+
+.toggle-btn {
+	padding: var(--spacing-xs) var(--spacing-sm);
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+	background-color: var(--surface-color);
+	color: var(--text-secondary);
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-xs);
+}
+
+.toggle-btn:hover {
+	border-color: var(--primary-color);
+	background-color: rgba(59, 130, 246, 0.05);
+}
+
+.toggle-btn.active {
+	background-color: var(--primary-color);
+	color: white;
+	border-color: var(--primary-color);
+}
+
+.toggle-btn.active:hover {
+	background-color: var(--primary-hover);
+}
+
+/* List View Styles */
+.positions-list {
+	background-color: white;
+	border-radius: var(--border-radius);
+	border: 1px solid var(--border-color);
+	overflow: hidden;
+}
+
+.list-header-row {
+	display: grid;
+	grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr 1fr;
+	gap: var(--spacing-md);
+	padding: var(--spacing-md);
+	background-color: var(--surface-color);
+	border-bottom: 1px solid var(--border-color);
+	font-weight: 600;
+	color: var(--text-primary);
+	font-size: 0.875rem;
+}
+
+.list-row {
+	display: grid;
+	grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr 1fr;
+	gap: var(--spacing-md);
+	padding: var(--spacing-md);
+	border-bottom: 1px solid var(--border-color);
+	transition: background-color 0.2s ease;
+}
+
+.list-row:hover {
+	background-color: var(--surface-color);
+}
+
+.list-row:last-child {
+	border-bottom: none;
+}
+
+.list-cell {
+	display: flex;
+	align-items: center;
+	font-size: 0.875rem;
+	color: var(--text-primary);
+}
+
+.list-cell.symbol {
+	font-weight: 600;
+}
+
+.list-cell.stock-name {
+	color: var(--text-secondary);
+}
+
+.list-cell.realized.positive {
+	color: var(--success-color);
+	font-weight: 600;
+}
+
+.list-cell.realized.negative {
+	color: var(--danger-color);
+	font-weight: 600;
+}
+
+/* Responsive list view */
+@media (max-width: 1200px) {
+	.list-header-row,
+	.list-row {
+		grid-template-columns: 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-sm);
+	}
+
+	.list-cell {
+		font-size: 0.8rem;
+	}
+}
+
+@media (max-width: 768px) {
+	.view-toggle {
+		justify-content: center;
+		margin-bottom: var(--spacing-sm);
+	}
+
+	.toggle-btn {
+		padding: var(--spacing-sm);
+		font-size: 0.8rem;
+	}
+
+	.list-header-row,
+	.list-row {
+		grid-template-columns: 1fr 1fr;
+		gap: var(--spacing-xs);
+		padding: var(--spacing-sm);
+	}
+
+	.list-header-row .list-cell:nth-child(n+3),
+	.list-row .list-cell:nth-child(n+3) {
+		display: none;
+	}
+
+	.list-header-row .list-cell:nth-child(1)::after {
+		content: " / Name";
+	}
+
+	.list-header-row .list-cell:nth-child(2)::after {
+		content: " / Shares";
+	}
+
+	.list-cell {
+		font-size: 0.75rem;
 	}
 } 
