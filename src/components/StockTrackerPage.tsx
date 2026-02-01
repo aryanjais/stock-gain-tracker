@@ -11,7 +11,7 @@ import { CSVUpload } from './CSVUpload';
 import { PortfolioSummary } from './PortfolioSummary';
 import { GainLossCalculator } from './GainLossCalculator';
 import { useStockContext } from '../context/useStockContext';
-import type { StockEntry } from '../types';
+import type { StockEntry, StockEntryFormData } from '../types';
 
 export const StockTrackerPage: React.FC = () => {
 	const [showAddForm, setShowAddForm] = useState(false);
@@ -19,7 +19,7 @@ export const StockTrackerPage: React.FC = () => {
 	const [showPortfolioSummary, setShowPortfolioSummary] = useState(false);
 	const [showCalculator, setShowCalculator] = useState(false);
 	const [editingEntry, setEditingEntry] = useState<StockEntry | null>(null);
-	const { state, clearEntries } = useStockContext();
+	const { state, clearEntries, addEntry } = useStockContext();
 
 	const handleClearAllTrades = () => {
 		const confirmed = window.confirm(
@@ -43,6 +43,70 @@ export const StockTrackerPage: React.FC = () => {
 	const handleEditCancel = () => {
 		setEditingEntry(null);
 		setShowAddForm(false);
+	};
+
+	const handleLoadSampleData = async () => {
+		if (!window.confirm('This will add sample data to your portfolio. Continue?')) return;
+
+		try {
+			const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+				? import.meta.env.BASE_URL.slice(0, -1)
+				: import.meta.env.BASE_URL;
+
+			const response = await fetch(`${baseUrl}/stock%20track.csv`);
+			if (!response.ok) throw new Error('Failed to fetch sample data');
+
+			const text = await response.text();
+			const rows = text.split('\n').slice(1); // Skip header
+
+			let successCount = 0;
+
+			for (const row of rows) {
+				if (!row.trim()) continue;
+				const columns = row.split(',');
+				// Expected format: Date,Time,Stock Name,Type,Quantity,Price,Status
+				if (columns.length < 6) continue;
+
+				const [dateStr, timeStr, stockName, type, qtyStr, priceStr, status] = columns.map(c => c.trim());
+
+				if (!stockName) continue;
+
+				// Try to construct a valid date
+				let date = new Date().toISOString();
+				try {
+					date = new Date(`${dateStr}T${timeStr}:00`).toISOString();
+				} catch (e) {
+					console.error('Date parse error', e);
+				}
+
+				// Generate a simple symbol from the name
+				const symbol = stockName.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 8) || 'STOCK';
+
+				const formData: StockEntryFormData = {
+					symbol: symbol,
+					stockName: stockName,
+					type: (type.toLowerCase() === 'buy' ? 'buy' : 'sell') as 'buy' | 'sell',
+					quantity: parseFloat(qtyStr),
+					price: parseFloat(priceStr),
+					date: date,
+					fees: 0,
+					notes: status || ''
+				};
+
+				await addEntry(formData);
+				successCount++;
+			}
+
+			if (successCount > 0) {
+				alert(`Successfully imported ${successCount} sample transactions!`);
+			} else {
+				alert('No valid transactions found in sample data.');
+			}
+			
+		} catch (e) {
+			console.error(e);
+			alert('Failed to load sample data. Please check console for details.');
+		}
 	};
 
 	if (showAddForm) {
@@ -104,6 +168,14 @@ export const StockTrackerPage: React.FC = () => {
 					>
 						📁 Import CSV
 					</button>
+					{state.entries.length === 0 && (
+						<button
+							className="btn btn-secondary"
+							onClick={handleLoadSampleData}
+						>
+							🧪 Try with Sample Data
+						</button>
+					)}
 					<button
 						className="btn btn-secondary"
 						onClick={() => setShowPortfolioSummary(true)}

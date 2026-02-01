@@ -1,0 +1,24 @@
+Date,Time,Stock Name,Type,Quantity,Price,Status
+2025-08-04,13:05,NCC,Buy,85,984.55,Completed
+2025-08-04,12:21,Delhivery,Sell,100,746.65,Completed
+2025-07-30,12:05,Delhivery,Buy,30,424.60,Completed
+2025-07-30,07:31,Trent,Sell,10,4186.00,Completed
+2025-07-25,15:59,Trent,Buy,10,4186.00,Completed
+2025-07-24,09:44,Radico Khaitan,Sell,80,194.60,Completed
+2025-07-23,10:19,Radico Khaitan,Buy,80,194.60,Completed
+2025-07-22,09:29,Sapphire Foods,Sell,13,1181.05,Completed
+2025-07-02,08:24,SBI,Buy,50,294.00,Completed
+2025-06-25,15:36,Tata Power,Sell,66,1240.00,Completed
+2025-06-25,09:36,Kirloskar Bros,Sell,24,718.00,Completed
+2025-06-11,10:19,BPCL,Sell,150,714.65,Completed
+2025-05-12,06:39,PB Fintech,Sell,78,724.00,Completed
+2025-04-23,06:53,BPCL,Buy,150,314.67,Completed
+2025-04-23,09:29,SBI,Buy,100,213.00,Completed
+2025-04-17,10:19,SBI,Sell,110,213.00,Completed
+2025-04-09,10:19,SBI,Buy,10,213.00,Completed
+2025-04-07,09:41,SBI,Buy,100,215.00,Completed
+2025-04-02,12:28,PB Fintech,Sell,75,720.00,Completed
+2025-04-02,12:28,ABB India,Sell,23,930.00,Completed
+2025-03-27,09:36,SBI,Sell,50,213.00,Completed
+2025-03-26,09:36,PB Fintech,Buy,150,903.44,Completed
+2025-03-25,10:52,Trent,Sell,9,3950.65,Completed
